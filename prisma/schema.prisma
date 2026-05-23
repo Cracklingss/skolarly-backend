@@ -5,9 +5,41 @@
 
 generator client {
   provider = "prisma-client"
-  output   = "../generated/prisma"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+model User {
+  id               String    @id @default(uuid())
+  email            String?   @unique
+  password         String?
+  name             String?
+  emailVerified    DateTime? @map("email_verified")
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  tokens           Token[]
+}
+
+enum TokenType {
+  REFRESH
+  EMAIL_VERIFY
+}
+
+model Token {
+  id         String     @id @default(uuid())
+  type       TokenType
+  token      String     @unique
+  expiresAt  DateTime
+  createdAt  DateTime   @default(now())
+  consumedAt DateTime?
+  revokedAt  DateTime?
+
+  userId     String
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
 }
