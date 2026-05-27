@@ -4,7 +4,8 @@ export const signupSchema = z.object({
   body: z.object({
     name: z
       .string({ message: "Name is required" })
-      .min(2, "Name must be at least 2 characters"),
+      .min(2, "Name must be at least 2 characters")
+      .max(100, "Name must be less than 100 characters"),
     email: z
       .string({ message: "Email is required" })
       .email("Invalid email format"),
