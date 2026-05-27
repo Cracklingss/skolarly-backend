@@ -8,7 +8,7 @@ const router = Router();
 const aiController = new AIController();
 
 // Public route for portfolio visitors to ask questions
-router.post("/v1/ask", validateSchema(askSchema), aiController.ask);
+router.post("/v1/ask", upload.single("file"), aiController.ask);
 router.post("/v1/lesson-explainer", upload.single("file"), aiController.lessonExplainer);
 router.post("/v1/quiz-generator", upload.single("file"), aiController.quizGenerator);
 

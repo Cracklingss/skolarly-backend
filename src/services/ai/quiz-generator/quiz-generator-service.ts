@@ -4,7 +4,6 @@ import { generateEmbedding, generateQuiz } from "../core/gemini-service";
 export async function QuizGeneratorService(
   context: string,
   difficulty: string,
-  numberOfQuestions: string,
   quizType: string,
   generateAnswerKey: boolean,
 ) {
@@ -39,7 +38,6 @@ export async function QuizGeneratorService(
     const raw = await generateQuiz(
       context,
       difficulty,
-      numberOfQuestions,
       quizType,
       generateAnswerKey,
       knowledgebase,

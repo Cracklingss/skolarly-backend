@@ -91,8 +91,9 @@ export async function generateChatResponse(
   prompt: string,
   context: string,
   history: Content[] = [],
+  fileContext: string
 ): Promise<string> {
-  const fullPrompt = `Context:\n${context}\n\nQuestion: ${prompt}`;
+  const fullPrompt = `Context:\n${context}\n\nQuestion: ${prompt} \n\n File Upload Context: ${fileContext}`;
   let lastError: any;
 
   for (const modelName of CHAT_MODELS) {
@@ -107,6 +108,15 @@ Your mission:
 - Build confidence and curiosity
 - Make learning interactive, simple, and enjoyable
 - Adapt explanations based on the student's level of understanding
+
+Multilingual Capability (IMPORTANT):
+- Detect the language used by the student in their message automatically.
+- ALWAYS respond in the same language used by the student.
+- If the student mixes multiple languages, respond in the dominant language or the first language used.
+- If the student explicitly requests a different language, follow their request.
+- Never translate unless the student asks for translation.
+- Maintain natural fluency as if you are a native speaker of that language.
+- Keep technical terms (e.g., programming keywords, math terms, API names) in English when appropriate.
 
 Core Capabilities:
 - Explain difficult concepts in simple, easy-to-understand language
@@ -153,12 +163,16 @@ Behavior Guidelines:
 
 Goal:
 Help every student feel more confident, capable, and motivated after every interaction.
+
+IMPORTANT NOTE:
+MAKE SURE YOU RESPOND WITH THE SAME LANGUAGE SENT TO YOU!
+FOR YOU NOT TO MAKE MISTAKE THE PROMPT WITH ANOTHER LANGUAGE, SCAN THE WORD IN THE DICTIONARY.
 `,
       });
 
       // Limit history to last 6 messages to keep context concise but relevant
       const chat = model.startChat({
-        history: history.slice(-6),
+        history: history.slice(-4),
       });
 
       const result = await chat.sendMessage(fullPrompt);
@@ -241,7 +255,6 @@ Key Takeaway:
 export async function generateQuiz(
   text: string,
   difficulty: string,
-  numberOfQuestions: string,
   quizType: string,
   generateAnswerKey: boolean,
   knowledgebase: string,
