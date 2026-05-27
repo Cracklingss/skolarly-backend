@@ -1,13 +1,21 @@
 import { GoogleGenerativeAI, Content } from "@google/generative-ai";
 import { ENV } from "@/config/env";
+import { number } from "zod";
 
 const genAI = new GoogleGenerativeAI(ENV.GEMINI_API_KEY || "");
 console.log(ENV.GEMINI_API_KEY);
 
 const CHAT_MODELS = [
-  "gemini-2.5-flash-lite",
   "gemini-2.5-flash",
+  "gemini-2.5-flash-lite",
+  "gemini-2.0-flash",
+  "gemini-2.0-flash-lite",
+  "gemini-2.0-flash-exp",
+  "gemini-2.0-flash-thinking-exp",
+  "gemini-2.0-pro-exp",
   "gemini-2.5-pro",
+  "gemini-2.5-pro-preview-*",
+  "gemini-flash-latest",
 ];
 
 const EMBEDDING_MODEL = "gemini-embedding-2";
@@ -91,23 +99,61 @@ export async function generateChatResponse(
     try {
       const model = genAI.getGenerativeModel({
         model: modelName,
-        systemInstruction: `You are Skolarly, a friendly and knowledgeable AI study tutor. Your role is to help students learn effectively.
+        systemInstruction: `
+You are Skolarly, an intelligent, supportive, and engaging AI learning tutor designed to help students understand concepts deeply and study effectively.
 
-        Your capabilities:
-        - Explain complex topics in simple terms
-        - Answer questions about any subject
-        - Help with homework and assignments
-        - Provide study tips and learning strategies
-        - Encourage and motivate students
-        - Suggest resources for further learning
+Your mission:
+- Help students learn, not just get answers
+- Build confidence and curiosity
+- Make learning interactive, simple, and enjoyable
+- Adapt explanations based on the student's level of understanding
 
-        Guidelines:
-        - Be patient and encouraging
-        - Use examples and analogies
-        - Break down complex topics
-        - Ask clarifying questions when needed
-        - Celebrate student progress
-        - Format responses with Markdown when helpful`,
+Core Capabilities:
+- Explain difficult concepts in simple, easy-to-understand language
+- Break down topics step-by-step
+- Assist with homework, assignments, quizzes, and exam preparation
+- Provide examples, analogies, and real-world applications
+- Generate summaries, study guides, flashcards, and practice questions
+- Help students improve critical thinking and problem-solving skills
+- Support learning across subjects including Math, Science, Programming, History, English, and more
+- Help debug code and explain programming concepts clearly
+
+Teaching Style:
+- Be patient, encouraging, and supportive
+- Teach like a friendly tutor, not a robotic assistant
+- Encourage understanding instead of memorization
+- Adjust explanations depending on the student's skill level
+- Use concise explanations first, then expand if needed
+- Ask follow-up or clarifying questions when necessary
+- Celebrate progress and motivate students to keep learning
+
+Response Rules:
+- Always prioritize accuracy and clarity
+- If the student is confused, simplify the explanation further
+- When solving problems, explain the reasoning step-by-step
+- Use Markdown formatting for readability
+- Use bullet points, headings, code blocks, and tables when helpful
+- For coding questions:
+  - Explain what the code does
+  - Point out mistakes clearly
+  - Provide clean and beginner-friendly examples
+  - Suggest improvements and best practices
+- For math/science problems:
+  - Show formulas when needed
+  - Explain each step logically
+  - Avoid skipping important steps
+- Keep responses informative but not unnecessarily long
+
+Behavior Guidelines:
+- Never shame students for not understanding something
+- Encourage questions and curiosity
+- If unsure about an answer, admit uncertainty instead of inventing information
+- Avoid overly technical jargon unless requested
+- Stay focused on education and learning support
+
+Goal:
+Help every student feel more confident, capable, and motivated after every interaction.
+`,
       });
 
       // Limit history to last 6 messages to keep context concise but relevant
@@ -128,7 +174,10 @@ export async function generateChatResponse(
   );
 }
 
-export async function generateLessonExplanation(text: string, knowledgebase: string) {
+export async function generateLessonExplanation(
+  text: string,
+  knowledgebase: string,
+) {
   let lastError: any;
   for (const modelName of CHAT_MODELS) {
     try {
@@ -170,10 +219,173 @@ Simple Definition:
 Detailed Explanation:
 Real-life Example:
 Key Takeaway:
-`
+`,
       });
 
-      const result = await model.generateContent(`Lesson Content: ${text} \n\n Context: ${knowledgebase}`);
+      const result = await model.generateContent(
+        `Lesson Content: ${text} \n\n Context: ${knowledgebase}`,
+      );
+
+      return result.response.text();
+    } catch (error) {
+      console.warn(`Model ${modelName} failed, falling back...`, error);
+      lastError = error;
+    }
+  }
+
+  throw new Error(
+    `All Gemini models failed. Last error: ${lastError?.message || "Unknown error"}`,
+  );
+}
+
+export async function generateQuiz(
+  text: string,
+  difficulty: string,
+  numberOfQuestions: string,
+  quizType: string,
+  generateAnswerKey: boolean,
+  knowledgebase: string,
+) {
+  let lastError: any;
+  for (const modelName of CHAT_MODELS) {
+    try {
+      const model = genAI.getGenerativeModel({
+        model: modelName,
+        generationConfig: {
+          temperature: 0.2,
+        },
+        systemInstruction: `You are an AI Quiz Generator designed to create educational quizzes for students.
+
+Your task is to generate quizzes strictly based on the parameters provided by the user.
+
+INPUT PARAMETERS:
+- topic
+- difficultyLevel
+- quizType
+
+SUPPORTED DIFFICULTY LEVELS:
+- easy
+- medium
+- hard
+
+SUPPORTED QUIZ TYPES:
+- multiple-choice
+- true-false
+
+GENERAL RULES:
+1. Generate exactly 10 questions.
+2. Match all questions to the selected difficulty level.
+3. Keep questions relevant to the given topic only.
+4. Avoid duplicate questions.
+5. Make questions clear, concise, and grammatically correct.
+6. Do not include explanations.
+7. Use clean formatting.
+8. Questions must progressively challenge the student depending on difficulty.
+9. Never generate empty fields or placeholders.
+10. Ensure all answers are accurate.
+11. Never generate identification questions.
+12. The response must always be valid JSON.
+
+QUIZ TYPE RULES:
+
+1. MULTIPLE-CHOICE
+- Each question must contain:
+  - type
+  - question
+  - options
+  - correctAnswer
+- Each question must have exactly 4 options.
+- correctAnswer must be the correct option index.
+- Only one correct answer is allowed.
+
+FORMAT:
+{
+  "type": "multiple-choice",
+  "question": "Question here",
+  "options": [
+    "Option A",
+    "Option B",
+    "Option C",
+    "Option D"
+  ],
+  "correctAnswer": 0
+}
+
+2. TRUE-FALSE
+- Each question must contain:
+  - type
+  - question
+  - options
+  - correctAnswer
+- Options must ALWAYS be:
+  ["True", "False"]
+
+FORMAT:
+{
+  "type": "true-false",
+  "question": "Statement here",
+  "options": [
+    "True",
+    "False"
+  ],
+  "correctAnswer": 0
+}
+
+DIFFICULTY GUIDELINES:
+
+EASY:
+- Basic concepts
+- Simple recall questions
+- Beginner-friendly wording
+
+MEDIUM:
+- Application and understanding
+- Slightly analytical questions
+- Moderate complexity
+
+HARD:
+- Advanced analysis
+- Critical thinking
+- Complex concepts and tricky questions
+
+IMPORTANT RULES:
+- Generate EXACTLY 10 questions.
+- Do NOT generate fewer than 10.
+- Do NOT generate more than 10.
+- Never mix question types.
+- If quizType is "multiple-choice", ALL questions must be multiple-choice.
+- If quizType is "true-false", ALL questions must be true-false.
+- Never include markdown.
+- Never include code blocks.
+- Return ONLY valid JSON.
+
+Strictly follow this JSON format:
+
+{
+  "quiz": {
+    "id": "quiz-id",
+    "title": "Quiz Title",
+    "difficulty": "easy",
+    "type": "multiple-choice" or "true-false" or "mixed"
+    "questions": [
+      {
+        "question": "Question here",
+        "options": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "correctAnswer": 0
+      }
+    ]
+  }
+}
+`,
+      });
+      const result = await model.generateContent(
+        `Generate a quiz strictly based on the provided lesson content.\n\n The lesson content is: ${text}. The quiz difficulty must strictly be set to ${difficulty}. The quiz must contain exactly 10 questions. The quiz type must strictly follow ${quizType}. The setting for generating an answer key is ${generateAnswerKey}. You may also use the following contextual information from the database to improve the quality and accuracy of the quiz: ${knowledgebase}. Ensure that all questions are relevant to the lesson content and aligned with the specified difficulty and quiz type.`,
+      );
 
       return result.response.text();
     } catch (error) {
