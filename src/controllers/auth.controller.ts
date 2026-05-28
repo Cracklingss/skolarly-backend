@@ -94,6 +94,7 @@ export class AuthController {
 
   public me = async (req: Request, res: Response) => {
     const token = req.cookies.refreshToken;
+    console.log(token);
     const payload = jwt.decode(token);
     if (!payload || typeof payload.sub !== "string") {
       return res.status(400).json({ message: "afsd" });
