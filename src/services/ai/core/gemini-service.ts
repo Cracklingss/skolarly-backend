@@ -1,9 +1,7 @@
 import { GoogleGenerativeAI, Content } from "@google/generative-ai";
 import { ENV } from "@/config/env";
-import { number } from "zod";
 
 const genAI = new GoogleGenerativeAI(ENV.GEMINI_API_KEY || "");
-console.log(ENV.GEMINI_API_KEY);
 
 const CHAT_MODELS = [
   "gemini-2.5-flash",

@@ -62,10 +62,8 @@ export class AuthController {
 
   // Refresh Token Helps Generate another valid Access Token
   public refresh = async (req: Request, res: Response) => {
-    console.log("fasdfas");
     const refreshToken = req.body?.refreshToken || req.cookies?.refreshToken;
     const result = await RefreshTokenService(refreshToken);
-    console.log(result);
 
     if (result.code === 200 && result.data?.tokens) {
       this.setAuthCookies(res, result.data.tokens);
@@ -97,7 +95,6 @@ export class AuthController {
   public me = async (req: Request, res: Response) => {
     const token = req.cookies.refreshToken;
     const payload = jwt.decode(token);
-    console.log(payload);
     if (!payload || typeof payload.sub !== "string") {
       return res.status(400).json({ message: "afsd" });
     }

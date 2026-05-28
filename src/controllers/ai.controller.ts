@@ -11,7 +11,6 @@ export class AIController {
    * Main RAG Chat Endpoint
    */
   public ask = async (req: Request, res: Response) => {
-    console.log(req);
   try {
     // MULTIPART FORM DATA VALUES ARE STRINGS
     const question = req.body.question;
@@ -29,10 +28,6 @@ export class AIController {
         message: "Invalid history format",
       });
     }
-
-    console.log("QUESTION:", question);
-    console.log("HISTORY:", history);
-    console.log("FILE:", req.file);
 
     // NO FILE UPLOADED
     if (!req.file) {
@@ -95,7 +90,6 @@ export class AIController {
     }
     const { difficulty, quizType, generateAnswerKey } =
       req.body;
-    console.log(req.body);
 
     const extractedText = await extractText(req.file.path);
 
