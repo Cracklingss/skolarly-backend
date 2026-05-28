@@ -5,7 +5,6 @@ type AuthenticatedRequest = Request & { user?: JwtPayload };
 
 export class AuthMiddleware {
   public execute = async (req: Request, res: Response, next: NextFunction) => {
-    console.log("hello")
     const authReq = req as AuthenticatedRequest;
     const refreshToken = req.cookies.refreshToken;
     
