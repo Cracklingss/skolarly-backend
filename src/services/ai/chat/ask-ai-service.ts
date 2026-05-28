@@ -2,7 +2,7 @@ import { KnowledgeBaseRepository } from "@/repositories/knowledgebase.repository
 import { generateEmbedding, generateChatResponse } from "../core/gemini-service";
 import { Content } from "@google/generative-ai";
 
-export async function AskAIService(question: string, history: Content[] = []) {
+export async function AskAIService(question: string, history: Content[] = [], fileContext: string) {
   const knowledgeBaseRepository = new KnowledgeBaseRepository();
 
   try {
@@ -27,7 +27,7 @@ export async function AskAIService(question: string, history: Content[] = []) {
     }
 
     // 4. Generate AI response
-    const answer = await generateChatResponse(question, context, history);
+    const answer = await generateChatResponse(question, context, history, fileContext);
 
     return {
       code: 200,

@@ -42,7 +42,7 @@ export async function ResendEmailVerificationService(email: string) {
 
     await tokenRepository.createEmailVerificationToken({ userId: user.id, token, expiresAt });
 
-    const emailVerificationURL = `${process.env.BACKEND_URL}/api/auth/v1/verify-email?token=${encodeURIComponent(token)}`;
+    const emailVerificationURL = `${process.env.FRONTEND_URL}/verify-email?token=${encodeURIComponent(token)}`;
 
     const html = renderTemplate("verify-email.html", {
       name: user.name ?? "there",
